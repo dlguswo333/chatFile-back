@@ -2,17 +2,17 @@ var app = require('express')();
 var http = require('http').createServer(app);
 var cors = require('cors');
 var fs = require('fs');
+const data = require('./data.js').data;
+
 
 app.use(cors());
 
-const server_port = 8000;
-const client_port = 3000
 
 var messageList = [];
 
 var io = require('socket.io')(http, {
   cors: {
-    origin: `http://localhost:${client_port}`,
+    origin: `http://localhost:${data.front_port}`,
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -28,20 +28,20 @@ const handleMessage = (message) => {
   messageList.push(message);
 }
 
-io.on('connection', (socket) => {
+io.on(data.back_connect, (socket) => {
   console.log('a client connected:socket id:' + socket.id);
-  socket.emit('full message list', messageList);
-  socket.on('chat message', (message) => {
-    console.log('message: ' + message);
+  socket.emit(data.full_message_list, messageList);
+  socket.on(data.new_message, (message) => {
+    console.log(data.new_message + message);
     handleMessage(message);
-    io.emit('chat message', message);
+    io.emit(data.new_message, message);
   })
 });
 
-io.on('disconnection', (socket) => {
+io.on(data.disconnection, (socket) => {
   console.log('a user disconnected:socket id:' + socket.id);
 });
 
-http.listen(server_port, () => {
-  console.log(`listening on port num:${server_port}`);
+http.listen(data.back_port, () => {
+  console.log(`listening on port num:${data.back_port}`);
 });

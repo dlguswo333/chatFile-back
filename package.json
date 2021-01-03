@@ -1,5 +1,5 @@
 {
-  "name": "server",
+  "name": "chat_file_back",
   "version": "1.0.0",
   "description": "server to support chat_with_files",
   "main": "index.js",
