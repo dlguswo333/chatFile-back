@@ -38,9 +38,9 @@ io.on(data.back_connect, (socket) => {
 });
 
 const handleMessage = (message, type) => {
-  message.type = type;
-  message.date = Date.now();
-  message.key = crypto.createHash('sha256').update(message.userName + message.date).digest('hex');
+  message['type'] = type;
+  message['date'] = Date.now();
+  message['key'] = crypto.createHash('sha256').update(message.userName + message.date).digest('hex');
 }
 
 // start the server. listen to the port.
@@ -87,10 +87,11 @@ app.get(`/files/:key`, (req, res) => {
   console.log('file download request');
   for (message of messageList) {
     if (req.params.key === message.key) {
-      var filePath = upload_path + req.params.key + path.extname(message['value']['name']);
-      var fileName = message['value']['name'];
+      var filePath = upload_path + req.params.key + path.extname(message['fileName']);
+      var fileName = message['fileName'];
       res.download(filePath, fileName, (err) => {
         if (err) {
+          console.log(filePath, fileName);
           console.log('error while handling file download');
           return res.sendStatus(500);
         }
@@ -99,6 +100,6 @@ app.get(`/files/:key`, (req, res) => {
     }
   }
   // could not find the file with the key.
-  console.log('error while handling file download');
+  console.log('could not find the file');
   return res.sendStatus(404);
 });
