@@ -7,12 +7,21 @@ const cors = require('cors');
 const fs = require('fs');
 const data = require('./data.js').data;
 const crypto = require('crypto');
+const userDb = new (require('./userdb'))('./db/user.db');
+const getSalt = () => {
+  return crypto.randomBytes(10).toString('hex');
+}
 
 app.use(cors());
 app.use(upload());
 
 var messageList = [];
 
+/*
+
+  socket io part start
+
+*/
 var io = require('socket.io')(http, {
   cors: {
     origin: `http://localhost:${data.front_port}`,
@@ -25,12 +34,15 @@ var io = require('socket.io')(http, {
 io.on(data.back_connect, (socket) => {
   console.log('a client connected:socket id:' + socket.id);
   socket.emit(data.full_message_list, messageList);
+
+  // a client sent a new message.
   socket.on(data.new_message, (message) => {
     console.log(data.new_message);
     handleMessage(message, 'text');
     messageList.push(message);
     io.emit(data.new_message, message);
   })
+
   // a client disconnected.
   socket.on(data.back_disconnect, (socket) => {
     console.log('a user disconnected:socket id:' + socket.id);
@@ -40,13 +52,15 @@ io.on(data.back_connect, (socket) => {
 const handleMessage = (message, type) => {
   message['type'] = type;
   message['date'] = Date.now();
-  message['key'] = crypto.createHash('sha256').update(message.userName + message.date).digest('hex');
+  message['key'] = crypto.createHash('sha256').update(message.userName + getSalt() + message.date).digest('hex');
 }
+/*
 
-// start the server. listen to the port.
-http.listen(data.back_port, () => {
-  console.log(`listening on port num:${data.back_port}`);
-});
+  socket io part end
+
+*/
+
+
 
 // handle file upload.
 app.post('/files', (req, res) => {
@@ -82,6 +96,13 @@ app.post('/files', (req, res) => {
   });
 });
 
+app.post(`/signIn`, (req, res) => {
+  const id = req.body.id;
+  const pw = req.body.pw;
+  userDb.signIn(id, pw);
+});
+
+
 // handle file download.
 app.get(`/files/:key`, (req, res) => {
   console.log('file download request');
@@ -103,3 +124,16 @@ app.get(`/files/:key`, (req, res) => {
   console.log('could not find the file');
   return res.sendStatus(404);
 });
+
+// start the server. listen to the port.
+http.listen(data.back_port, () => {
+  console.log(`listening on port num:${data.back_port}`);
+});
+
+// close all connections on SIGINT SIGNAL.
+process.on('SIGUSR2', () => {
+  console.log('\nSIGINT');
+  userDb.close();
+  http.close();
+  process.exit(0);
+})

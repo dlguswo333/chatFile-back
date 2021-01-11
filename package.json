@@ -1,12 +1,12 @@
 {
   "name": "chat_file_back",
-  "version": "1.0.0",
-  "description": "server to support chat_with_files",
+  "version": "0.1.0",
+  "description": "server to support chat_files",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon ${npm_package_main}",
-    "clear": "rm files/*"
+    "clean": "rm files/* db/*"
   },
   "author": "dlguswo333",
   "license": "MIT",
@@ -17,6 +17,7 @@
     "express-fileupload": "^1.2.0",
     "json": "^10.0.0",
     "nodemon": "^2.0.7",
-    "socket.io": "^3.0.4"
+    "socket.io": "^3.0.4",
+    "sqlite3": "^5.0.0"
   }
 }

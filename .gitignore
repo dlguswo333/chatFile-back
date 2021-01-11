@@ -6,3 +6,4 @@
 # private files
 /files/*
 /db/*
+/.vscode
