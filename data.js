@@ -8,6 +8,6 @@ data['new_message'] = 'new message';
 data['back_disconnect'] = 'disconnect';
 data['front_disconnect'] = 'disconnection';
 data['max_file_size'] = 100 * 1024 * 1024;
-
+data['max_age'] = 24 * 60 * 60 * 1000;
 exports.data = data;
 // export default data;

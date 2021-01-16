@@ -1,5 +1,6 @@
 const app = require('express')();
 const upload = require('express-fileupload');
+const session = require('express-session');
 const path = require('path');
 const upload_path = './files/';
 const http = require('http').createServer(app);
@@ -7,19 +8,37 @@ const cors = require('cors');
 const fs = require('fs');
 const data = require('./data.js').data;
 const crypto = require('crypto');
+const axios = require('axios');
 const userDb = new (require('./userdb'))('./db/user.db');
 const getSalt = () => {
   return crypto.randomBytes(10).toString('hex');
 }
 
-app.use(cors());
+app.use(cors({
+  origin: `http://localhost:${data.front_port}`,
+  credentials: true
+}));
 app.use(upload());
+var sessionWare = session({
+  // NOTE: change this secret value!!!
+  secret: '2j23jjf&#@dlfdkkc*%',
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    httpOnly: true,
+    maxAge: data.max_age,
+    secure: false
+  },
+});
+
+// link session with socket io.
+app.use(sessionWare);
 
 var messageList = [];
 
 /*
 
-  socket io part start
+socket io part start
 
 */
 var io = require('socket.io')(http, {
@@ -30,30 +49,45 @@ var io = require('socket.io')(http, {
   }
 });
 
+io.use((socket, next) => {
+  sessionWare(socket.request, {}, next);
+});
+
 // new client connected.
 io.on(data.back_connect, (socket) => {
-  console.log('a client connected:socket id:' + socket.id);
+  const key = socket.request.session.key;
+  if (key === undefined) {
+    // block the client.
+    socket.disconnect();
+    return;
+  }
+  const id = socket.request.session.clientId;
+  console.log('a client connected with key:' + key);
+
   socket.emit(data.full_message_list, messageList);
 
   // a client sent a new message.
   socket.on(data.new_message, (message) => {
     console.log(data.new_message);
-    handleMessage(message, 'text');
+    handleMessage(message, 'text', id);
     messageList.push(message);
     io.emit(data.new_message, message);
   })
 
   // a client disconnected.
   socket.on(data.back_disconnect, (socket) => {
-    console.log('a user disconnected:socket id:' + socket.id);
+    console.log('a user disconnected');
+    // signedKeyMap.delete(key);
   });
 });
 
-const handleMessage = (message, type) => {
+const handleMessage = (message, type, id) => {
+  message['id'] = id;
   message['type'] = type;
   message['date'] = Date.now();
   message['key'] = crypto.createHash('sha256').update(message.userName + getSalt() + message.date).digest('hex');
 }
+
 /*
 
   socket io part end
@@ -64,20 +98,25 @@ const handleMessage = (message, type) => {
 
 // handle file upload.
 app.post('/files', (req, res) => {
+  const key = req.session.key;
+  const id = req.session.clientId;
+  if (key === undefined) {
+    // block this upload.
+    return res.sendStatus(403);
+  }
   console.log('file upload detected');
+
   let file = req.files.file;
   if (file.size > data.max_file_size) {
     console.log('reject upload: too big file size');
-    res.sendStatus(500);
-    return;
+    return res.sendStatus(500);
   }
 
   message = {
-    'userName': req.body.userName,
     'fileName': file.name,
     'fileSize': file.size
   };
-  handleMessage(message, 'file');
+  handleMessage(message, 'file', id);
 
   fs.writeFile(upload_path + message.key + path.extname(file.name), file.data, (err) => {
     if (err) {
@@ -92,19 +131,80 @@ app.post('/files', (req, res) => {
     messageList.push(message);
     io.emit(data.new_message, message);
     res.sendStatus(200);
-
   });
 });
 
+// handle sign in.
 app.post(`/signIn`, (req, res) => {
-  const id = req.body.id;
-  const pw = req.body.pw;
-  userDb.signIn(id, pw);
+  if (req.session.key !== undefined) {
+    // this user is already signed in!
+    res.sendStatus(200);
+    return;
+  }
+  const basic = 'Basic '
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith(basic)) {
+    const idColonPw = new Buffer.from(authHeader.split(basic)[1], 'base64').toString();
+    if (idColonPw.split(':').length != 2) {
+      // oops, something is wrong...
+      res.sendStatus(500);
+    }
+    const id = idColonPw.split(':')[0];
+    const pw = idColonPw.split(':')[1];
+
+    userDb.signIn(id, pw).then((value) => {
+      console.log('sign in result:', value);
+      if (value === true) {
+        // sign in succeeded.
+        req.session.key = crypto.createHash('sha256').update(req.sessionID + getSalt()).digest('hex');
+        req.session.clientId = id;
+        res.cookie('signedIn', true, {
+          httpOnly: false,
+          maxAge: data.max_age,
+          secure: false
+        });
+        res.cookie('myId', id, {
+          httpOnly: false,
+          maxAge: data.max_age,
+          secure: false
+        });
+        res.sendStatus(200);
+      }
+    }).catch((value) => {
+      if (value === false) {
+        // id or pw does not match.
+        res.sendStatus(401);
+      }
+      else if (value === undefined) {
+        // unknown error such as db error.
+        res.sendStatus(500);
+      }
+    });
+  }
 });
 
+// handle sign out.
+app.post(`/signOut`, (req, res) => {
+  req.session.destroy();
+  res.cookie('signedIn', false, {
+    httpOnly: false,
+    maxAge: 0,
+    secure: false
+  });
+  res.cookie('myId', '', {
+    httpOnly: false,
+    maxAge: 0,
+    secure: false
+  });
+  res.sendStatus(200);
+});
 
 // handle file download.
 app.get(`/files/:key`, (req, res) => {
+  if (req.session.key === undefined) {
+    // block this request.
+    return res.sendStatus(403);
+  }
   console.log('file download request');
   for (message of messageList) {
     if (req.params.key === message.key) {
@@ -130,10 +230,9 @@ http.listen(data.back_port, () => {
   console.log(`listening on port num:${data.back_port}`);
 });
 
-// close all connections on SIGINT SIGNAL.
-process.on('SIGUSR2', () => {
-  console.log('\nSIGINT');
-  userDb.close();
-  http.close();
-  process.exit(0);
-})
+(async () => {
+  const ret = await userDb.query('admin');
+  if (!ret) {
+    userDb.insert('admin', 'admin', 'admin', getSalt());
+  }
+})();

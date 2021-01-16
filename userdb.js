@@ -1,4 +1,5 @@
 const sqlite3 = require('sqlite3').verbose();
+const { rejects } = require('assert');
 const crypto = require('crypto');
 
 const hashPw = (pw, salt) => {
@@ -12,74 +13,82 @@ class UserDb {
         console.error(err.message);
         return false;
       }
-      this.db.run(`CREATE TABLE IF NOT EXISTS user(id TEXT UNIQUE, hashedPw TEXT, salt TEXT)`, (err) => {
-        if (err) {
-          console.error(err.message);
-          return false;
-        }
-      })
+      this.db.run(`
+        CREATE TABLE IF NOT EXISTS
+        user(
+          id TEXT UNIQUE,
+          nickname TEXT,
+          hashedPw TEXT,
+          salt TEXT)`,
+        (err) => {
+          if (err) {
+            console.error(err.message);
+            return false;
+          }
+        })
       console.log('connected to the user data successfully');
       return true;
     });
   }
 
   // even if the variable pw means password, it needs to be already hashed.
-  insert = (id, pw, salt) => {
-    this.db.serialize();
-    this.db.run(
-      `INSERT INTO user VALUES(?, ?, ?)`,
-      [id, hashPw(pw, salt), salt],
-      (err) => {
-        if (err) {
-          console.error(err.message);
-          return false;
+  insert = async (id, pw, nickname, salt) => {
+    this.db.serialize(() => {
+      this.db.run(
+        `INSERT INTO user VALUES(?, ?, ?, ?)`,
+        [id, hashPw(pw, salt), nickname, salt],
+        (err) => {
+          if (err) {
+            console.error(err.message);
+            return false;
+          }
+          return true;
         }
-        return true;
-      }
-    )
+      )
+    });
   }
 
-  signIn = (id, pw) => {
-    this.db.serialize(() => {
+  signIn = async (id, pw) => {
+    return new Promise((resolve, reject) => {
       this.db.get(
         `SELECT * FROM user WHERE id=?`,
         [id],
         (err, row) => {
           if (err) {
             console.error(err.message);
-            console.log(undefined);
-            return undefined;
+            reject(undefined);
           }
-          if (row === undefined) {
+          if (row == undefined) {
             console.log('user does not exist with the id');
-            return false;
+            reject(false);
+            return;
           }
           const salt = row['salt'];
           const hashedPw = hashPw(pw, salt);
           if (hashedPw === row['hashedPw']) {
-            console.log('good to sign in');
+            resolve(true);
           }
           else {
-            console.log('pw does not match');;
+            reject(false);
           }
         }
-      )
+      );
     });
   }
   query = (id) => {
-    this.db.get(
-      `SELECT * FROM user WHERE id=?`,
-      [id],
-      (err, row) => {
-        if (err) {
-          console.error(err.message);
-          console.log(undefined);
-          return undefined;
+    return new Promise((resolve, reject) => {
+      this.db.get(
+        `SELECT * FROM user WHERE id=?`,
+        [id],
+        (err, row) => {
+          if (err) {
+            console.error(err.message);
+            reject(undefined);
+          }
+          resolve(row);
         }
-        console.log(row);
-        return row;
-      }
-    )
+      );
+    });
   }
 
   close = () => {
