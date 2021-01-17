@@ -49,6 +49,7 @@ var io = require('socket.io')(http, {
   }
 });
 
+// link express session with socket io.
 io.use((socket, next) => {
   sessionWare(socket.request, {}, next);
 });
