@@ -11,7 +11,7 @@ class UserDb {
     this.db = new sqlite3.Database(path, (err) => {
       if (err) {
         console.error(err.message);
-        return false;
+        return;
       }
       this.db.run(`
         CREATE TABLE IF NOT EXISTS
@@ -23,11 +23,11 @@ class UserDb {
         (err) => {
           if (err) {
             console.error(err.message);
-            return false;
+            return;
           }
         })
       console.log('connected to the user data successfully');
-      return true;
+      return;
     });
   }
 
