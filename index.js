@@ -197,21 +197,21 @@ app.post(`/signUp`, (req, res) => {
     const idColonPw = new Buffer.from(authHeader.split(basic)[1], 'base64').toString();
     if (idColonPw.split(':').length != 2) {
       // oops, something is wrong...
-      res.sendStatus(500);
+      return res.sendStatus(500);
     }
     const id = idColonPw.split(':')[0];
     const pw = idColonPw.split(':')[1];
     if (data.validate_id(id) == false || data.validate_pw(pw) == false) {
       // id or pw does not satisfy the requirements.
-      res.sendStatus(401);
+      return res.sendStatus(401);
     }
 
-    userDb.signUp(id, pw).then((value) => {
+    userDb.signUp(id, pw, id, getSalt()).then((value) => {
       console.log('sign up succeeded');
-      res.sendStatus(200);
+      return res.sendStatus(200);
     }).catch((value) => {
       console.log('sign up failed');
-      res.sendStatus(401);
+      return res.status(401).send((value.includes('UNIQUE') ? 'ID already exists!' : 'Sign up failed. Please try again later.'));
     });
   }
 });

@@ -58,7 +58,7 @@ const signUp = (id, pw, nickname, salt) => {
       (err) => {
         if (err) {
           console.error(err.message);
-          reject(false);
+          reject(err.message);
         }
         resolve(true);
       }
