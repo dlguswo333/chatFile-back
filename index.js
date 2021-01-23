@@ -1,6 +1,7 @@
 const app = require('express')();
 const upload = require('express-fileupload');
 const session = require('express-session');
+const userDb = require('./userdb');
 const path = require('path');
 const upload_path = './files/';
 const http = require('http').createServer(app);
@@ -9,7 +10,7 @@ const fs = require('fs');
 const data = require('./data.js').data;
 const crypto = require('crypto');
 const axios = require('axios');
-const userDb = new (require('./userdb'))('./db/user.db');
+
 const getSalt = () => {
   return crypto.randomBytes(10).toString('hex');
 }
@@ -152,7 +153,11 @@ app.post(`/signIn`, (req, res) => {
     }
     const id = idColonPw.split(':')[0];
     const pw = idColonPw.split(':')[1];
-
+    if (data.validate_id(id) == false || data.validate_pw(pw) == false) {
+      // id or pw does not satisfy the requirements.
+      res.sendStatus(401);
+      return;
+    }
     userDb.signIn(id, pw).then((value) => {
       console.log('sign in result:', value);
       if (value === true) {
@@ -180,6 +185,33 @@ app.post(`/signIn`, (req, res) => {
         // unknown error such as db error.
         res.sendStatus(500);
       }
+    });
+  }
+});
+
+// handle sign up.
+app.post(`/signUp`, (req, res) => {
+  const basic = 'Basic '
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith(basic)) {
+    const idColonPw = new Buffer.from(authHeader.split(basic)[1], 'base64').toString();
+    if (idColonPw.split(':').length != 2) {
+      // oops, something is wrong...
+      res.sendStatus(500);
+    }
+    const id = idColonPw.split(':')[0];
+    const pw = idColonPw.split(':')[1];
+    if (data.validate_id(id) == false || data.validate_pw(pw) == false) {
+      // id or pw does not satisfy the requirements.
+      res.sendStatus(401);
+    }
+
+    userDb.signUp(id, pw).then((value) => {
+      console.log('sign up succeeded');
+      res.sendStatus(200);
+    }).catch((value) => {
+      console.log('sign up failed');
+      res.sendStatus(401);
     });
   }
 });
@@ -230,10 +262,3 @@ app.get(`/files/:key`, (req, res) => {
 http.listen(data.back_port, () => {
   console.log(`listening on port num:${data.back_port}`);
 });
-
-(async () => {
-  const ret = await userDb.query('admin');
-  if (!ret) {
-    userDb.insert('admin', 'admin', 'admin', getSalt());
-  }
-})();
