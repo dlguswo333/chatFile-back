@@ -140,8 +140,7 @@ app.post('/files', (req, res) => {
 app.post(`/signIn`, (req, res) => {
   if (req.session.key !== undefined) {
     // this user is already signed in!
-    res.sendStatus(200);
-    return;
+    return res.sendStatus(200);
   }
   const basic = 'Basic '
   const authHeader = req.headers.authorization;
@@ -201,13 +200,14 @@ app.post(`/signUp`, (req, res) => {
     }
     const id = idColonPw.split(':')[0];
     const pw = idColonPw.split(':')[1];
-    if (data.validate_id(id) == false || data.validate_pw(pw) == false) {
+
+    if (data.validate_id(id) === false || data.validate_pw(pw) === false) {
       // id or pw does not satisfy the requirements.
       return res.sendStatus(401);
     }
 
     userDb.signUp(id, pw, id, getSalt()).then((value) => {
-      console.log('sign up succeeded');
+      console.log(`new account created with the id:${id}`);
       return res.sendStatus(200);
     }).catch((value) => {
       console.log('sign up failed');
@@ -230,6 +230,22 @@ app.post(`/signOut`, (req, res) => {
     secure: false
   });
   res.sendStatus(200);
+});
+
+// Handle request for user id.
+// So there is no need to store user's id as a cookie on client side.
+app.post(`/getMyId`, (req, res) => {
+  if (req.session.key === undefined) {
+    // Block this request. 
+    return res.sendStatus(403);
+  }
+  const id = req.session.clientId;
+  if (id === undefined) {
+    // key exists, but id does not.
+    // Something is really wrong...
+    return res.sendStatus(500);
+  }
+  return res.status(200).send(`${id}`);
 });
 
 // handle file download.
