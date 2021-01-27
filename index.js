@@ -168,11 +168,6 @@ app.post(`/signIn`, (req, res) => {
           maxAge: data.max_age,
           secure: false
         });
-        res.cookie('myId', id, {
-          httpOnly: false,
-          maxAge: data.max_age,
-          secure: false
-        });
         res.sendStatus(200);
       }
     }).catch((value) => {
@@ -243,9 +238,10 @@ app.post(`/getMyId`, (req, res) => {
   if (id === undefined) {
     // key exists, but id does not.
     // Something is really wrong...
+    console.error(`this client with key ${req.session.key} does not have id!`);
     return res.sendStatus(500);
   }
-  return res.status(200).send(`${id}`);
+  return res.status(200).send(id);
 });
 
 // handle file download.
