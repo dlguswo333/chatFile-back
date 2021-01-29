@@ -18,7 +18,15 @@
     "express-session": "^1.17.1",
     "json": "^10.0.0",
     "nodemon": "^2.0.7",
+    "session-file-store": "^1.5.0",
     "socket.io": "^3.0.4",
     "sqlite3": "^5.0.0"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "files/*",
+      "db/*",
+      "sessions/*"
+    ]
   }
 }

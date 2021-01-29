@@ -11,9 +11,10 @@ const db = new sqlite3.Database(path, (err) => {
     return;
   }
   db.serialize(() => {
+    // Create user DB if not exists.
     db.run(`CREATE TABLE IF NOT EXISTS
       user(
-        id TEXT UNIQUE,
+        id TEXT UNIQUE PRIMARY KEY,
         hashedPw TEXT,
         nickname TEXT,
         salt TEXT
@@ -23,6 +24,7 @@ const db = new sqlite3.Database(path, (err) => {
         return;
       }
     });
+    // Insert admin account for debugging.
     db.get(
       `SELECT * FROM user WHERE id=?`,
       ['admin'],

@@ -9,7 +9,7 @@ const cors = require('cors');
 const fs = require('fs');
 const data = require('./data.js').data;
 const crypto = require('crypto');
-const axios = require('axios');
+const sessionStore = require('session-file-store')(session);
 
 const getSalt = () => {
   return crypto.randomBytes(10).toString('hex');
@@ -30,6 +30,7 @@ var sessionWare = session({
     maxAge: data.max_age,
     secure: false
   },
+  store: new sessionStore()
 });
 
 // link session with socket io.
