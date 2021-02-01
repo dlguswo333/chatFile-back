@@ -37,6 +37,7 @@ var sessionWare = session({
 app.use(sessionWare);
 
 var messageList = [];
+var clientList = new Map();
 
 /*
 
@@ -65,22 +66,29 @@ io.on(data.back_connect, (socket) => {
     return;
   }
   const id = socket.request.session.clientId;
-  console.log('a client connected with key:' + key);
-
+  console.log(`${id} connected.`);
+  // Add user to the map.
+  // If we do not delete the key from map,
+  // it will be much easier when the app has rooms.
+  clientList.set(id, 1 + (clientList.has(id) ? clientList.get(id) : 0));
+  io.emit(data.client_connect, { id, value: clientList.get(id) });
+  socket.emit(data.full_client_list, Array.from(clientList));
   socket.emit(data.full_message_list, messageList);
 
   // a client sent a new message.
   socket.on(data.new_message, (message) => {
-    console.log(data.new_message);
+    // console.log(data.new_message);
     handleMessage(message, 'text', id);
     messageList.push(message);
     io.emit(data.new_message, message);
-  })
+  });
 
   // a client disconnected.
   socket.on(data.back_disconnect, (socket) => {
-    console.log('a user disconnected');
-    // signedKeyMap.delete(key);
+    console.log(`${id} disconnected`);
+    // Set user active to false.
+    clientList.set(id, clientList.get(id) - 1);
+    io.emit(data.client_disconnect, { id, value: clientList.get(id) });
   });
 });
 
