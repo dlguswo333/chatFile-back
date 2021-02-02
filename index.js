@@ -13,7 +13,7 @@ const sessionStore = require('session-file-store')(session);
 
 const getSalt = () => {
   return crypto.randomBytes(10).toString('hex');
-}
+};
 
 app.use(cors({
   origin: `http://localhost:${data.front_port}`,
@@ -30,7 +30,10 @@ var sessionWare = session({
     maxAge: data.max_age,
     secure: false
   },
-  store: new sessionStore()
+  // 21.02.02. session-file-store looks like having a issue printing
+  // no such file or directory continually.
+  // Until then, set log function not to print at all.
+  store: new sessionStore({ ttl: data.max_age, logFn: (log) => { } })
 });
 
 // link session with socket io.
@@ -199,15 +202,19 @@ app.post(`/signUp`, (req, res) => {
   if (authHeader && authHeader.startsWith(basic)) {
     const idColonPw = new Buffer.from(authHeader.split(basic)[1], 'base64').toString();
     if (idColonPw.split(':').length != 2) {
-      // oops, something is wrong...
+      // Oops, something is wrong...
       return res.sendStatus(500);
     }
     const id = idColonPw.split(':')[0];
     const pw = idColonPw.split(':')[1];
 
-    if (data.validate_id(id) === false || data.validate_pw(pw) === false) {
-      // id or pw does not satisfy the requirements.
-      return res.sendStatus(401);
+    if (data.validate_id(id) === false) {
+      // id does not satisfy the requirements.
+      return res.status(401).send(`ID does not meet the requirements.`);
+    }
+    if (data.validate_pw(pw) === false) {
+      // pw does not satisfy the requirements.
+      return res.status(401).send(`ID does not meet the requirements.`);
     }
 
     userDb.signUp(id, pw, id, getSalt()).then((value) => {
@@ -222,7 +229,6 @@ app.post(`/signUp`, (req, res) => {
 
 // handle sign out.
 app.post(`/signOut`, (req, res) => {
-  req.session.destroy();
   res.cookie('signedIn', false, {
     httpOnly: false,
     maxAge: 0,
@@ -233,7 +239,14 @@ app.post(`/signOut`, (req, res) => {
     maxAge: 0,
     secure: false
   });
-  res.sendStatus(200);
+  req.session.destroy((err) => {
+    if (err) {
+      // Error occured, nothing can be done here.
+      console.error(`Error while destroying session`);
+      return res.sendStatus(200);
+    }
+    res.sendStatus(200);
+  });
 });
 
 // Handle request for user id.

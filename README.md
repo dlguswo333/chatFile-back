@@ -1,6 +1,21 @@
 # chatFile
+![front_1.png](/img/front_1.png)
+<br>
+
 **chatFile** has been made and will be made to communicate with your friends or yourself with *ease*.  
-**chatFile** aims to help clients to chat via files as well as texts.  
+**chatFile** aims to help chat with files as well as texts.  
+<br>
+
+**chatFile** has the following features:
+<br>
+* Chat with texts.
+* Share files.
+* Authorization e.g. sign up, sign in, and sign out.
+* Store user ids and passwords. Passwords are stored being encrypted.
+* Remember client sessions.
+* Show connected client list.
+* Show toast messages.
+<br>
 
 The repository you are seeing is the back-end side repository.  
 
@@ -23,16 +38,22 @@ You can find the back-end side Github repository at [here](https://github.com/dl
 **chatFile** back-end side will communicate with the front-side web to receive, process, and send clients' chats.
 ## Dependencies
 **chatFile** front-end side is powered with the following dependencies:
-  1. [Express](https://expressjs.com/)  
+  1. [Express](https://expressjs.com/)
+    <br>
     to host http back-end server.
-  2. [socket.io](https://socket.io/)  
+  2. [socket.io](https://socket.io/)
+    <br>
     to synchronize client's chat and server's chat real-time.
-  3. [cors]
-    to handle CORS policy.
+  3. [Express-session](https://www.npmjs.com/package/express-session)
+    <br>
+    to remember signed in clients' sessions.
+<br>
+  
+... and many other great modules!
 
 ## Version History
 ### 0.1.0
-  🔲 Add client list
+  ✅ Add client list
   <br>
   ✅ Add SQLite database to store user informations
   <br>

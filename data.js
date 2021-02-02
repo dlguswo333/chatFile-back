@@ -15,8 +15,10 @@ data['max_age'] = 24 * 60 * 60 * 1000;
 data['not_these_letters'] = ': \t';
 data['min_id_len'] = 5;
 data['min_pw_len'] = 5;
+data['max_id_len'] = 15;
+data['max_pw_len'] = 15;
 data['validate_id'] = (id) => {
-  if (id.length < data['min_id_len'])
+  if (id.length < data['min_id_len'] || id.length > data['max_id_len'])
     return false;
   for (let i = 0; i < data['not_these_letters'].length; ++i) {
     if (id.includes(data['not_these_letters'][i]))
@@ -25,7 +27,7 @@ data['validate_id'] = (id) => {
   return true;
 }
 data['validate_pw'] = (pw) => {
-  if (pw.length < data['min_pw_len'])
+  if (pw.length < data['min_pw_len'] || pw.length > data['max_pw_len'])
     return false;
   for (let i = 0; i < data['not_these_letters'].length; ++i) {
     if (pw.includes(data['not_these_letters'][i]))
