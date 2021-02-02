@@ -234,11 +234,6 @@ app.post(`/signOut`, (req, res) => {
     maxAge: 0,
     secure: false
   });
-  res.cookie('myId', '', {
-    httpOnly: false,
-    maxAge: 0,
-    secure: false
-  });
   req.session.destroy((err) => {
     if (err) {
       // Error occured, nothing can be done here.
