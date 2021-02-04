@@ -1,4 +1,7 @@
 # chatFile
+![logo192.png](/img/logo192.png)
+<br>
+
 ![front_1.png](/img/front_1.png)
 <br>
 
@@ -64,4 +67,6 @@ You can find the back-end side Github repository at [here](https://github.com/dl
   ✅ Add chat with file feature
   <br>
   ✅ Add chat with text feature
-  <br>
+<br>
+
+**chatFile** logos were generated from https://favicon.io/.
