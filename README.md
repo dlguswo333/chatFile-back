@@ -50,8 +50,11 @@ You can find the back-end side Github repository at [here](https://github.com/dl
   3. [Express-session](https://www.npmjs.com/package/express-session)
     <br>
     to remember signed in clients' sessions.
+  4. [sqlite3](https://github.com/mapbox/node-sqlite3)
+    <br>
+    to store clients' information.
 <br>
-  
+
 ... and many other great modules!
 
 ## Version History
@@ -70,3 +73,14 @@ You can find the back-end side Github repository at [here](https://github.com/dl
 <br>
 
 **chatFile** logos were generated from https://favicon.io/.
+<br>
+
+## How chatFile has been implemented
+### Chat with Messages
+<br>
+
+### Chat with Files
+<br>
+
+### Client authentication
+<br>

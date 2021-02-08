@@ -1,6 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const crypto = require('crypto');
-const path = './db/user.db';
+const path = './db/client.db';
 const hashPw = (pw, salt) => {
   return crypto.createHash('sha256').update(pw + salt).digest('hex');
 }
@@ -11,9 +11,9 @@ const db = new sqlite3.Database(path, (err) => {
     return;
   }
   db.serialize(() => {
-    // Create user DB if not exists.
+    // Create client DB if not exists.
     db.run(`CREATE TABLE IF NOT EXISTS
-      user(
+      client(
         id TEXT UNIQUE PRIMARY KEY,
         hashedPw TEXT,
         nickname TEXT,
@@ -26,7 +26,7 @@ const db = new sqlite3.Database(path, (err) => {
     });
     // Insert admin account for debugging.
     db.get(
-      `SELECT * FROM user WHERE id=?`,
+      `SELECT * FROM client WHERE id=?`,
       ['admin'],
       (err, row) => {
         if (err) {
@@ -35,7 +35,7 @@ const db = new sqlite3.Database(path, (err) => {
         }
         if (row === undefined) {
           db.run(
-            `INSERT INTO user VALUES(?, ?, ?, ?)`,
+            `INSERT INTO client VALUES(?, ?, ?, ?)`,
             ['admin', hashPw('admin', 'fewajfa'), 'admin', 'fewajfa'],
             (err) => {
               if (err) {
@@ -55,7 +55,7 @@ const db = new sqlite3.Database(path, (err) => {
 const signUp = (id, pw, nickname, salt) => {
   return new Promise((resolve, reject) => {
     db.run(
-      `INSERT INTO user VALUES(?, ?, ?, ?)`,
+      `INSERT INTO client VALUES(?, ?, ?, ?)`,
       [id, hashPw(pw, salt), nickname, salt],
       (err) => {
         if (err) {
@@ -71,7 +71,7 @@ const signUp = (id, pw, nickname, salt) => {
 const signIn = async (id, pw) => {
   return new Promise((resolve, reject) => {
     db.get(
-      `SELECT * FROM user WHERE id=?`,
+      `SELECT * FROM client WHERE id=?`,
       [id],
       (err, row) => {
         if (err) {
@@ -79,7 +79,7 @@ const signIn = async (id, pw) => {
           reject(undefined);
         }
         if (row == undefined) {
-          console.log('user does not exist with the id');
+          console.log('client does not exist with the id');
           reject(false);
           return;
         }
@@ -99,7 +99,7 @@ const signIn = async (id, pw) => {
 const query = (id) => {
   return new Promise((resolve, reject) => {
     db.get(
-      `SELECT * FROM user WHERE id=?`,
+      `SELECT * FROM client WHERE id=?`,
       [id],
       (err, row) => {
         if (err) {
@@ -115,11 +115,11 @@ const query = (id) => {
 close = () => {
   db.close((err) => {
     if (err) {
-      console.error('error while closing the user db');
+      console.error('error while closing the client db');
       return;
     }
   })
-  console.log('closed the user db');
+  console.log('closed the client db');
 }
 
 module.exports = { signIn, signUp, query, close };
