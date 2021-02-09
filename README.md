@@ -55,7 +55,7 @@ You can find the back-end side Github repository at [here](https://github.com/dl
     to store clients' information.
 <br>
 
-... and many other great modules!
+... and many other gerat modules!
 
 ## Version History
 ### 0.1.0
@@ -76,11 +76,62 @@ You can find the back-end side Github repository at [here](https://github.com/dl
 <br>
 
 ## How chatFile has been implemented
+
+### Express http Server
+Thanks to javascript's asynchronous functions, ``Express`` is a web server framework
+which is IO intensive specialized, and one example of such IO intensive servers is a chat app.
+<br>
+
+**chatFile** consists of two apps:back-end server, and front-end server.<br>
+As the names state, this back-end server stores clients' information, messages, uploaded files,<br>
+and reacts to the front-end side. The front-end requests with appropriate data at the appropriate router(path).<br>
+```js
+app.post(`/signOut`, (req, res) => {
+  res.cookie('signedIn', false, {
+    httpOnly: false,
+    maxAge: 0,
+    secure: false
+  });
+  req.session.destroy((err) => {
+    if (err) {
+      // Error occured, nothing can be done here.
+      console.error(`Error while destroying session`);
+      return res.sendStatus(200);
+    }
+    res.sendStatus(200);
+  });
+});
+```
+Let's look at this example. The server's ``/signOut`` endpoint(path) answers to the POST request.<br>
+If a request comes in, the server will set ``signedIn`` cookie's lifetime to zero
+(which is going to be delete instantly), and then destroys the client's session.
+<br>
+
 ### Chat with Messages
+**chatFile** uses ``socket.io`` to synchronize across clients real-time.<br>
+``socket.io`` is an event-based websocket module, so the server detects every event that occurs real-time,
+and does the right things.<br>
+If a client connects, the server sends all the messages, and waits for the client to send or receive.<br>
+Every message should have its own contents and contexts, such as date, message type, sender's id and so on.<br>
+Therefore when the server receives a message from a client, at that time, the message is mere contents.<br>
+It is the server's job to attach date, sender's id, and such contexts.<br>
+If the message has been processed successfully, the message is appended at the end of the message list,
+and then broadcasted.<br>
+Currently, **chatFile** stores messages in volatile memory, so the messages will vanish if the app closes.<br>
 <br>
 
 ### Chat with Files
+**chatFile** can also deliver clients the file share feature.<br>
+files are viewed and shared in a shape of a message,
+but actually files are not delivered with ``socket.io``.
+They come with asynchronous request module ``axios``.<br>
+If a client uploads a file, the front-end bundles the file in a form data,
+and send the form data to the corresponding path for file upload.<br>
+Thanks to ``axios``'s extensive feature support, **chatFile** could present the client 
+with the upload completion process percentage with ``onUploadProgress`` callback easily.
 <br>
 
 ### Client authentication
 <br>
+
+### Client DataBase

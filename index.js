@@ -78,9 +78,8 @@ io.on(data.back_connect, (socket) => {
   socket.emit(data.full_client_list, Array.from(clientList));
   socket.emit(data.full_message_list, messageList);
 
-  // a client sent a new message.
+  // A client sent a new message.
   socket.on(data.new_message, (message) => {
-    // console.log(data.new_message);
     handleMessage(message, 'text', id);
     messageList.push(message);
     io.emit(data.new_message, message);
@@ -89,7 +88,7 @@ io.on(data.back_connect, (socket) => {
   // a client disconnected.
   socket.on(data.back_disconnect, (socket) => {
     console.log(`${id} disconnected`);
-    // Set user active to false.
+    // Decrement client number.
     clientList.set(id, clientList.get(id) - 1);
     io.emit(data.client_disconnect, { id, value: clientList.get(id) });
   });
@@ -136,12 +135,12 @@ app.post('/files', (req, res) => {
     if (err) {
       console.log('error upload file');
       res.sendStatus(500);
-      throw err;
+      return;
     }
 
-    // successful file upload.
-    // now emit the file as a chat message.
-    console.log('uploaded file saved');
+    // Successful file upload.
+    // Now emit the file as a chat message.
+    console.log('file uploaded');
     messageList.push(message);
     io.emit(data.new_message, message);
     res.sendStatus(200);
