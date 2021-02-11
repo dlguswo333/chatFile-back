@@ -75,7 +75,7 @@ You can find the back-end side Github repository at [here](https://github.com/dl
 **chatFile** logos were generated from https://favicon.io/.
 <br>
 
-## How chatFile has been implemented
+## How chatFile back-end has been implemented
 
 ### Express http Server
 Thanks to javascript's asynchronous functions, ``Express`` is a web server framework
@@ -104,13 +104,13 @@ app.post(`/signOut`, (req, res) => {
 ```
 Let's look at this example. The server's ``/signOut`` endpoint(path) answers to the POST request.<br>
 If a request comes in, the server will set ``signedIn`` cookie's lifetime to zero
-(which is going to be delete instantly), and then destroys the client's session.
+(which is going to be deleted instantly), and then destroys the client's session.
 <br>
 
 ### Chat with Messages
 **chatFile** uses ``socket.io`` to synchronize across clients real-time.<br>
 ``socket.io`` is an event-based websocket module, so the server detects every event that occurs real-time,
-and does the right things.<br>
+and does the job done.<br>
 If a client connects, the server sends all the messages, and waits for the client to send or receive.<br>
 Every message should have its own contents and contexts, such as date, message type, sender's id and so on.<br>
 Therefore when the server receives a message from a client, at that time, the message is mere contents.<br>
@@ -121,7 +121,7 @@ Currently, **chatFile** stores messages in volatile memory, so the messages will
 <br>
 
 ### Chat with Files
-**chatFile** can also deliver clients the file share feature.<br>
+**chatFile** also provides clients with the file share feature.<br>
 files are viewed and shared in a shape of a message,
 but actually files are not delivered with ``socket.io``.
 They come with asynchronous request module ``axios``.<br>
@@ -132,6 +132,53 @@ with the upload completion process percentage with ``onUploadProgress`` callback
 <br>
 
 ### Client authentication
+**chatFile** authenticate clients with ``Express-session``.<br>
+``Express-session`` is a middleware that creates a session of each client connected.<br>
+Every client has a unique session id and ``Express-session`` uses those ids to identify client sessions.<br>
+Also, a session can have user-defined objects or varialbes within itself.<br>
+It is a useful feature of ``Express-session`` since when a request comes in,<br>
+the server can reference the request's unique objects without any complicated codes.<br>
+Also, it is useful to authorize only to clients who signed in.<br>
+```js
+clientDb.signIn(id, pw).then((value) => {
+      console.log('sign in result:', value);
+      if (value === true) {
+        // sign in succeeded.
+        req.session.key = generateKey();
+        req.session.clientId = id;
+        res.cookie('signedIn', true, {
+          httpOnly: false,
+          maxAge: data.max_age,
+          secure: false
+        });
+        res.sendStatus(200);
+      }
+```
+The above code snippet illustrates how sign in works in **chatFile**.<br>
+``clientDb`` is a module for dealing with client information databse.<br>
+If ``clientDb.signIn()`` returns true for the given id and pw,
+the session will have ``key`` and ``clientId``.<br>
+That is how client authentication works in **chatFile**.
+If the request session does not have a valid key, the server will reject the request.
+```js
+app.post('/files', (req, res) => {
+  const key = req.session.key;
+  const id = req.session.clientId;
+  if (key === undefined) {
+    // block this upload.
+    return res.sendStatus(403);
+  }
+```
+Like this.
+<br>
+
+Since the session object is stored only in back-end side, client cannot see or
+modify the session, so the session-based client authentication is as safe as
+the server machine.
+<br>
+
+**chatFile** also uses ``session-file-store`` module to store client sessions on disk drive.<br>
+This way the server will keep the session data across the server app restarts.
 <br>
 
 ### Client DataBase

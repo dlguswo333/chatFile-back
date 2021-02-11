@@ -10,6 +10,7 @@ const db = new sqlite3.Database(path, (err) => {
     console.error(err.message);
     return;
   }
+  console.log('connection to client DB established');
   db.serialize(() => {
     // Create client DB if not exists.
     db.run(`CREATE TABLE IF NOT EXISTS

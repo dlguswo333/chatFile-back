@@ -1,7 +1,7 @@
 const app = require('express')();
 const upload = require('express-fileupload');
 const session = require('express-session');
-const userDb = require('./userdb');
+const clientDb = require('./clientdb');
 const path = require('path');
 const upload_path = './files/';
 const http = require('http').createServer(app);
@@ -168,7 +168,7 @@ app.post(`/signIn`, (req, res) => {
       res.sendStatus(401);
       return;
     }
-    userDb.signIn(id, pw).then((value) => {
+    clientDb.signIn(id, pw).then((value) => {
       console.log('sign in result:', value);
       if (value === true) {
         // sign in succeeded.
@@ -216,7 +216,7 @@ app.post(`/signUp`, (req, res) => {
       return res.status(401).send(`ID does not meet the requirements.`);
     }
 
-    userDb.signUp(id, pw, id, getSalt()).then((value) => {
+    clientDb.signUp(id, pw, id, getSalt()).then((value) => {
       console.log(`new account created with the id:${id}`);
       return res.sendStatus(200);
     }).catch((value) => {
