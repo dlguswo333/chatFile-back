@@ -19,7 +19,16 @@ app.use(cors({
   origin: `http://localhost:${data.front_port}`,
   credentials: true
 }));
-app.use(upload());
+
+// Attach express fileupload.
+app.use(upload({
+  limits: { fileSize: data.max_file_size },
+  limitHandler: (req, res, next) => {
+    console.error('file size bigger than the limit');
+    return res.sendStatus(403);
+  }
+}));
+
 var sessionWare = session({
   // NOTE: change this secret value!!!
   secret: '2j23jjf&#@dlfdkkc*%',
@@ -109,21 +118,23 @@ const handleMessage = (message, type, id) => {
 
 
 
-// handle file upload.
+// Handle file upload.
 app.post('/files', (req, res) => {
   const key = req.session.key;
   const id = req.session.clientId;
   if (key === undefined) {
-    // block this upload.
+    // Block this upload.
+    console.error('unauthorized access to file upload path');
     return res.sendStatus(403);
   }
   console.log('file upload detected');
 
-  let file = req.files.file;
-  if (file.size > data.max_file_size) {
-    console.log('reject upload: too big file size');
-    return res.sendStatus(500);
+  if (!req.files || !req.files.file) {
+    // File does not exist.
+    console.error('could not find file in request');
+    return res.sendStatus(400);
   }
+  let file = req.files.file;
 
   message = {
     'fileName': file.name,
@@ -143,7 +154,7 @@ app.post('/files', (req, res) => {
     console.log('file uploaded');
     messageList.push(message);
     io.emit(data.new_message, message);
-    res.sendStatus(200);
+    return res.sendStatus(200);
   });
 });
 
@@ -165,8 +176,7 @@ app.post(`/signIn`, (req, res) => {
     const pw = idColonPw.split(':')[1];
     if (data.validate_id(id) == false || data.validate_pw(pw) == false) {
       // id or pw does not satisfy the requirements.
-      res.sendStatus(401);
-      return;
+      return res.sendStatus(401);
     }
     clientDb.signIn(id, pw).then((value) => {
       console.log('sign in result:', value);
