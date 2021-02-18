@@ -161,8 +161,9 @@ app.post('/files', (req, res) => {
 // handle sign in.
 app.post(`/signIn`, (req, res) => {
   if (req.session.key !== undefined) {
-    // this user is already signed in!
-    return res.sendStatus(200);
+    // this client is already signed in!
+    // But okay. Let this client pass.
+    // return res.sendStatus(200);
   }
   const basic = 'Basic '
   const authHeader = req.headers.authorization;
@@ -247,9 +248,8 @@ app.post(`/signOut`, (req, res) => {
     if (err) {
       // Error occured, nothing can be done here.
       console.error(`Error while destroying session`);
-      return res.sendStatus(200);
     }
-    res.sendStatus(200);
+    return res.sendStatus(200);
   });
 });
 
@@ -262,12 +262,53 @@ app.post(`/getMyId`, (req, res) => {
   }
   const id = req.session.clientId;
   if (id === undefined) {
-    // key exists, but id does not.
+    // Key exists, but id does not.
     // Something is really wrong...
     console.error(`this client with key ${req.session.key} does not have id!`);
     return res.sendStatus(500);
   }
   return res.status(200).send(id);
+});
+
+app.post('/deleteAccount', (req, res) => {
+  if (req.session.key === undefined) {
+    // Block this request.
+    return res.sendStatus(403);
+  }
+  const id = req.session.clientId;
+  if (id === undefined) {
+    // Key exists, but id does not.
+    // Something is really wrong...
+    // Therefore block this request.
+    console.error(`this client with key ${req.session.key} doest not have id!`);
+    return res.sendStatus(500);
+  }
+  const pw = req.body.password;
+  if (pw === undefined) {
+    // Block this request.
+    return res.sendStatus(403);
+  }
+  clientDb.deleteClient(id, pw).then((value) => {
+    // Succesfully deleted client.
+    // Now make the client sign out.
+    // TODO: Remove the client id from the client list.
+    clientList.delete(id);
+    res.cookie('signedIn', false, {
+      httpOnly: false,
+      maxAge: 0,
+      secure: false
+    });
+    req.session.destroy((err) => {
+      if (err) {
+        // Error occured, nothing can be done here.
+        console.error(`Error while destroying session`);
+      }
+      return res.sendStatus(200);
+    });
+  }).catch((value) => {
+    // TODO: React to different errors.
+    return res.status(401).send(value);
+  });
 });
 
 // handle file download.
@@ -291,12 +332,12 @@ app.get(`/files/:key`, (req, res) => {
       return;
     }
   }
-  // could not find the file with the key.
+  // Could not find the file with the key.
   console.log('could not find the file');
   return res.sendStatus(404);
 });
 
-// start the server. listen to the port.
+// Start the server. listen to the port.
 http.listen(data.back_port, () => {
   console.log(`listening on port num:${data.back_port}`);
 });

@@ -59,6 +59,8 @@ You can find the back-end side Github repository at [here](https://github.com/dl
 
 ## Version History
 ### 0.1.0
+  🔲 Add settings(nickname, delete account)
+  <br>
   ✅ Add client list
   <br>
   ✅ Add SQLite database to store user informations
@@ -75,7 +77,7 @@ You can find the back-end side Github repository at [here](https://github.com/dl
 **chatFile** logos were generated from https://favicon.io/.
 <br>
 
-## How chatFile back-end has been implemented
+## How chatFile back-end has been Implemented
 
 ### Express http Server
 Thanks to javascript's asynchronous functions, ``Express`` is a web server framework

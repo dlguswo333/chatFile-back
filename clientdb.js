@@ -10,7 +10,6 @@ const db = new sqlite3.Database(path, (err) => {
     console.error(err.message);
     return;
   }
-  console.log('connection to client DB established');
   db.serialize(() => {
     // Create client DB if not exists.
     db.run(`CREATE TABLE IF NOT EXISTS
@@ -24,6 +23,7 @@ const db = new sqlite3.Database(path, (err) => {
         console.error(err.message);
         return;
       }
+      console.log('connection to client DB established');
     });
     // Insert admin account for debugging.
     db.get(
@@ -113,6 +113,47 @@ const query = (id) => {
   });
 }
 
+const deleteClient = (id, pw) => {
+  return new Promise((resolve, reject) => {
+    db.get(
+      `SELECT * FROM client WHERE id=?`,
+      [id],
+      (err, row) => {
+        if (err) {
+          // This error is due to DBMS error.
+          console.error(err.message);
+          reject(undefined);
+        }
+        if (row == undefined) {
+          reject('id does not match!');
+          return;
+        }
+        const salt = row['salt'];
+        const hashedPw = hashPw(pw, salt);
+        if (hashedPw === row['hashedPw']) {
+          db.run(
+            `DELETE FROM client WHERE id=?`,
+            [id],
+            (err) => {
+              if (err) {
+                // DBMS could not delete the client.
+                console.error(err.message);
+                reject(undefined);
+              }
+              // Successfully deleted the client.
+              resolve(true);
+            }
+          )
+        }
+        else {
+          // Password does not match.
+          reject('Password does not match!');
+        }
+      }
+    );
+  })
+};
+
 close = () => {
   db.close((err) => {
     if (err) {
@@ -123,4 +164,4 @@ close = () => {
   console.log('closed the client db');
 }
 
-module.exports = { signIn, signUp, query, close };
+module.exports = { signIn, signUp, query, close, deleteClient };
