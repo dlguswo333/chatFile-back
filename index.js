@@ -97,9 +97,11 @@ io.on(data.back_connect, (socket) => {
   // a client disconnected.
   socket.on(data.back_disconnect, (socket) => {
     console.log(`${id} disconnected`);
-    // Decrement client number.
-    clientList.set(id, clientList.get(id) - 1);
-    io.emit(data.client_disconnect, { id, value: clientList.get(id) });
+    // The client could have deleted his/her own account. Check it.
+    if (clientList.has(id)) {
+      clientList.set(id, clientList.get(id) - 1);
+      io.emit(data.client_disconnect, { id, value: clientList.get(id) });
+    }
   });
 });
 
@@ -290,9 +292,12 @@ app.post('/deleteAccount', (req, res) => {
   }
   clientDb.deleteClient(id, pw).then((value) => {
     // Succesfully deleted client.
-    // Now make the client sign out.
-    // TODO: Remove the client id from the client list.
+    // Delete the id from the client list and emit.
+    console.log(`Client ${id} deleted his/her own account`);
     clientList.delete(id);
+    console.log(clientList);
+    io.emit(data.full_client_list, Array.from(clientList));
+    // Now make the client sign out.
     res.cookie('signedIn', false, {
       httpOnly: false,
       maxAge: 0,
@@ -306,7 +311,7 @@ app.post('/deleteAccount', (req, res) => {
       return res.sendStatus(200);
     });
   }).catch((value) => {
-    // TODO: React to different errors.
+    // TODO React to different errors.
     return res.status(401).send(value);
   });
 });
