@@ -90,6 +90,7 @@ const signIn = async (id, pw) => {
           resolve(true);
         }
         else {
+          // password does not match.
           reject(false);
         }
       }
@@ -98,6 +99,7 @@ const signIn = async (id, pw) => {
 }
 
 const query = (id) => {
+  // Does id exist in client database?
   return new Promise((resolve, reject) => {
     db.get(
       `SELECT * FROM client WHERE id=?`,
@@ -111,6 +113,21 @@ const query = (id) => {
       }
     );
   });
+}
+
+const getAllIds = (id) => {
+  return new Promise((resolve, reject) => {
+    db.all(
+      `SELECT id FROM client`,
+      (err, rows) => {
+        if (err) {
+          console.error(err.message);
+          reject(undefined);
+        }
+        resolve(rows);
+      }
+    );
+  })
 }
 
 const deleteClient = (id, pw) => {
@@ -164,4 +181,4 @@ close = () => {
   console.log('closed the client db');
 }
 
-module.exports = { signIn, signUp, query, close, deleteClient };
+module.exports = { signIn, signUp, query, close, deleteClient, getAllIds };
