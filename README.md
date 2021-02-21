@@ -22,7 +22,7 @@
 
 The repository you are seeing is the back-end side repository.  
 
-You can find the back-end side Github repository at [here](https://github.com/dlguswo333/chatFile_front).  
+You can find the back-end side Github repository at [here](https://github.com/dlguswo333/chatFile-front).  
 
 # How to Install chatFile
   1. Download the front-end and back-end repositories.
@@ -50,7 +50,7 @@ You can find the back-end side Github repository at [here](https://github.com/dl
   3. [Express-session](https://www.npmjs.com/package/express-session)
     <br>
     to remember signed in clients' sessions.
-  4. [sqlite3](https://github.com/mapbox/node-sqlite3)
+  4. [node-sqlite3](https://github.com/mapbox/node-sqlite3)
     <br>
     to store clients' information.
 <br>
@@ -59,7 +59,7 @@ You can find the back-end side Github repository at [here](https://github.com/dl
 
 ## Version History
 ### 0.1.0
-  🔲 Add settings(nickname, delete account)
+  🔲 Add settings(nickname, delete account, change password)
   <br>
   ✅ Add client list
   <br>
@@ -184,3 +184,21 @@ This way the server will keep the session data across the server app restarts.
 <br>
 
 ### Client DataBase
+**chatFile** back-end uses ``SQLite3`` as a back-end database.<br>
+Thanks to ``node-sqlite3`` which is a interface tool between node.js and SQLite3,<br>
+it was easy to link between them.
+<br>
+
+**NOTE** that currently, **chatFile** does not protect database with authorization nor encrypt client's id. Only passwords are protected via ``sha256``.
+<br>
+
+The following is the schema of client table.
+<br>
+
+| Column | Type | Description | Attribute |
+| ---- | ---- | ---- | ---- |
+| id | TEXT | client's id. | PRIMARY KEY, NOT NULL |
+| hashedPw | TEXT | hashed value of client's password. | - |
+| nickname | TEXT | not used. same as id. | - |
+| salt | TEXT | salt value used to hash client's password | - |
+<br>

@@ -14,7 +14,7 @@ const db = new sqlite3.Database(path, (err) => {
     // Create client DB if not exists.
     db.run(`CREATE TABLE IF NOT EXISTS
       client(
-        id TEXT UNIQUE PRIMARY KEY,
+        id TEXT PRIMARY KEY NOT NULL,
         hashedPw TEXT,
         nickname TEXT,
         salt TEXT
