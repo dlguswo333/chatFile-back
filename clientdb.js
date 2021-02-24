@@ -113,7 +113,7 @@ const query = (id) => {
       }
     );
   });
-}
+};
 
 const getAllIds = (id) => {
   return new Promise((resolve, reject) => {
@@ -128,7 +128,7 @@ const getAllIds = (id) => {
       }
     );
   })
-}
+};
 
 const deleteClient = (id, pw) => {
   return new Promise((resolve, reject) => {
@@ -168,7 +168,45 @@ const deleteClient = (id, pw) => {
         }
       }
     );
-  })
+  });
+};
+
+const changePassword = (id, pw, newPw) => {
+  return new Promise((resolve, reject) => {
+    db.get(
+      `SELECT * FROM client where id=?`,
+      [id],
+      (err, row) => {
+        if (err) {
+          console.error(err.message);
+          reject(undefined);
+        }
+        const salt = row['salt'];
+        const hashedPw = hashPw(pw, salt);
+        if (hashedPw === row['hashedPw']) {
+          // Change password for the client.
+          // Do I need to create new salt? I think not.
+          // Salt is needed to protect from rainbow table attack,
+          // Old salt will not harm...
+          db.run(`UPDATE client SET hashedPw=? WHERE id=?`,
+          [hashPw(newPw, salt), id],
+          (err)=>{
+            if(err){
+              // Failed to renew password.
+              console.error(err.message);
+              reject(undefined);
+            }
+            // Successfully changed password.
+            resolve(true);
+          });
+        }
+        else{
+          // Password does not match.
+          reject('Password does not match!');
+        }
+      }
+    );
+  });
 };
 
 close = () => {
@@ -179,6 +217,6 @@ close = () => {
     }
   })
   console.log('closed the client db');
-}
+};
 
-module.exports = { signIn, signUp, query, close, deleteClient, getAllIds };
+module.exports = { signIn, signUp, query, close, deleteClient, getAllIds, changePassword };
