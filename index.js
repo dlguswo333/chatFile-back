@@ -4,6 +4,7 @@ const session = require('express-session');
 const clientDb = require('./clientdb');
 const path = require('path');
 const upload_path = './files/';
+const db_path = './db';
 const http = require('http').createServer(app);
 const cors = require('cors');
 const fs = require('fs');
@@ -14,6 +15,14 @@ const sessionStore = require('session-file-store')(session);
 const getSalt = () => {
   return crypto.randomBytes(10).toString('hex');
 };
+
+// Create folder for files and databases if not exist.
+if (!fs.existsSync(upload_path)) {
+  fs.mkdirSync(upload_path);
+}
+if (!fs.existsSync(db_path)) {
+  fs.mkdirSync(db_path);
+}
 
 app.use(cors({
   origin: `http://localhost:${data.front_port}`,
