@@ -18,10 +18,10 @@ const getSalt = () => {
 
 // Create folder for files and databases if not exist.
 if (!fs.existsSync(upload_path)) {
-  fs.mkdirSync(upload_path);
+  fs.mkdirSync(upload_path, { recursive: true });
 }
 if (!fs.existsSync(db_path)) {
-  fs.mkdirSync(db_path);
+  fs.mkdirSync(db_path, { recursive: true });
 }
 
 app.use(cors({
@@ -322,6 +322,45 @@ app.post('/deleteAccount', (req, res) => {
   }).catch((value) => {
     // TODO React to different errors.
     return res.status(401).send(value);
+  });
+});
+
+// Handle change password.
+app.post(`/changePassword`, (req, res) => {
+  if (req.session.key === undefined) {
+    // Block this request.
+    return res.sendStatus(403);
+  }
+  const id = req.session.clientId;
+  if (id === undefined) {
+    // Key exists, but id does not.
+    // Something is really wrong...
+    // Therefore block this request.
+    console.error(`this client with key ${req.session.key} doest not have id!`);
+    return res.sendStatus(500);
+  }
+  const pw = req.body.password;
+  const newPw = req.body.newPassword;
+  if (pw === undefined || newPw === undefined) {
+    // Bad request.
+    console.error(`${id} wanted to change password but did not send pw or new pw.`);
+    return res.sendStatus(403);
+  }
+  clientDb.changePassword(id, pw, newPw).then((value) => {
+    if (value === true) {
+      // Changed password successfully.
+      return res.status(200).send(`Password has been changed successfully!`);
+    }
+    else {
+      // This cannot be reached...
+      return res.sendStatus(500);
+    }
+  }).catch((value) => {
+    if (value === undefined) {
+      // Unknown db error.
+      return res.status(500).send(`Unknown server error. Please try again.`);
+    }
+    return res.status(403).send(value);
   });
 });
 

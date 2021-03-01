@@ -69,7 +69,8 @@ const signUp = (id, pw, nickname, salt) => {
   });
 }
 
-const signIn = async (id, pw) => {
+// Promise value: undefined, false, true
+const signIn = (id, pw) => {
   return new Promise((resolve, reject) => {
     db.get(
       `SELECT * FROM client WHERE id=?`,
@@ -115,7 +116,7 @@ const query = (id) => {
   });
 };
 
-const getAllIds = (id) => {
+const getAllIds = () => {
   return new Promise((resolve, reject) => {
     db.all(
       `SELECT id FROM client`,
@@ -189,18 +190,18 @@ const changePassword = (id, pw, newPw) => {
           // Salt is needed to protect from rainbow table attack,
           // Old salt will not harm...
           db.run(`UPDATE client SET hashedPw=? WHERE id=?`,
-          [hashPw(newPw, salt), id],
-          (err)=>{
-            if(err){
-              // Failed to renew password.
-              console.error(err.message);
-              reject(undefined);
-            }
-            // Successfully changed password.
-            resolve(true);
-          });
+            [hashPw(newPw, salt), id],
+            (err) => {
+              if (err) {
+                // Failed to renew password.
+                console.error(err.message);
+                reject(undefined);
+              }
+              // Successfully changed password.
+              resolve(true);
+            });
         }
-        else{
+        else {
           // Password does not match.
           reject('Password does not match!');
         }
