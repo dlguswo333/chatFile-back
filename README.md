@@ -59,7 +59,9 @@ You can find the back-end side Github repository at [here](https://github.com/dl
 
 ## Version History
 ### 0.1.0
-  🔲 Add settings(nickname, delete account, change password)
+  ✅ Add settings(nickname, delete account, change password)
+  <br>
+  ✅ Add client list
   <br>
   ✅ Add client list
   <br>
@@ -201,4 +203,10 @@ The following is the schema of client table.
 | hashedPw | TEXT | hashed value of client's password. | - |
 | nickname | TEXT | not used. same as id. | - |
 | salt | TEXT | salt value used to hash client's password | - |
+<br>
+
+From the general view of RDBMS, having two attributes ``PRIMARY KEY`` and ``NOT NULL`` on the same column may not seem natural,<br>
+because ``PRIMARY KEY`` means every row must have unique key and thus cannot have NULL value,<br>
+however ``SQLlite3`` had some bugs where ``PRIMARY KEY`` columns could have NULL value,<br>
+so to keep compatibility with earlier versions, ``SQLite3`` still permits NULL ``PRIMARY KEY``.
 <br>
