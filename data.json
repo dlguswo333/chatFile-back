@@ -1,0 +1,20 @@
+{
+  "back_port": 8000,
+  "front_port": 3000,
+  "back_connect": "connection",
+  "front_connect": "connect",
+  "full_message_list": "full message list",
+  "new_message": "new message",
+  "back_disconnect": "disconnect",
+  "front_disconnect": "disconnection",
+  "full_client_list": "full client list",
+  "client_connect": "client connect",
+  "client_disconnect": "client disconnect",
+  "max_file_size": 104857600,
+  "max_age": 86400000,
+  "not_these_letters": ": \t",
+  "min_id_len": 5,
+  "max_id_len": 15,
+  "min_pw_len": 5,
+  "max_pw_len": 15
+}

@@ -8,7 +8,7 @@ const db_path = './db';
 const http = require('http').createServer(app);
 const cors = require('cors');
 const fs = require('fs');
-const data = require('./data.js').data;
+const data = require('./data.json');
 const crypto = require('crypto');
 const sessionStore = require('session-file-store')(session);
 
@@ -229,11 +229,11 @@ app.post(`/signUp`, (req, res) => {
     const id = idColonPw.split(':')[0];
     const pw = idColonPw.split(':')[1];
 
-    if (data.validate_id(id) === false) {
+    if (!(data['min_id_len'] <= id.length || id.length <= data['max_id_len'])) {
       // id does not satisfy the requirements.
       return res.status(401).send(`ID does not meet the requirements.`);
     }
-    if (data.validate_pw(pw) === false) {
+    if (!(data['min_pw_len'] <= pw.length || pw.length <= data['max_pw_len'])) {
       // pw does not satisfy the requirements.
       return res.status(401).send(`ID does not meet the requirements.`);
     }
@@ -248,7 +248,7 @@ app.post(`/signUp`, (req, res) => {
   }
 });
 
-// handle sign out.
+// Handle sign out.
 app.post(`/signOut`, (req, res) => {
   res.cookie('signedIn', false, {
     httpOnly: false,
@@ -321,6 +321,7 @@ app.post('/deleteAccount', (req, res) => {
     });
   }).catch((value) => {
     // TODO React to different errors.
+    // I can improve this if I create an interface table.
     return res.status(401).send(value);
   });
 });
