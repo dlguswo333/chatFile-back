@@ -11,6 +11,7 @@ const fs = require('fs');
 const data = require('./data.json');
 const crypto = require('crypto');
 const sessionStore = require('session-file-store')(session);
+const { validateIdLen, validatePwLen } = require('./helper');
 
 const getSalt = () => {
   return crypto.randomBytes(10).toString('hex');
@@ -186,7 +187,7 @@ app.post(`/signIn`, (req, res) => {
     }
     const id = idColonPw.split(':')[0];
     const pw = idColonPw.split(':')[1];
-    if (data.validate_id(id) == false || data.validate_pw(pw) == false) {
+    if (!(validateIdLen(id) && validatePwLen(pw))) {
       // id or pw does not satisfy the requirements.
       return res.sendStatus(401);
     }
@@ -229,11 +230,11 @@ app.post(`/signUp`, (req, res) => {
     const id = idColonPw.split(':')[0];
     const pw = idColonPw.split(':')[1];
 
-    if (!(data['min_id_len'] <= id.length || id.length <= data['max_id_len'])) {
+    if (validateIdLen(pw)) {
       // id does not satisfy the requirements.
       return res.status(401).send(`ID does not meet the requirements.`);
     }
-    if (!(data['min_pw_len'] <= pw.length || pw.length <= data['max_pw_len'])) {
+    if (validatePwLen(pw)) {
       // pw does not satisfy the requirements.
       return res.status(401).send(`ID does not meet the requirements.`);
     }
