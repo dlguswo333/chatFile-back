@@ -52,7 +52,9 @@ You can find the back-end side Github repository at [here](https://github.com/dl
     to remember signed in clients' sessions.
   4. [node-sqlite3](https://github.com/mapbox/node-sqlite3)
     <br>
-    to store clients' information.
+    to store clients' information.<br>
+    **NOTE** that installing may fail not finding `python`.<br>
+    Call `npm i sqlite3 --build-from-source --python=/usr/bin/python3` to specify the path.
 <br>
 
 ... and many other gerat modules!
