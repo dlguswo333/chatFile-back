@@ -3,7 +3,7 @@
   "front_port": 3000,
   "back_connect": "connection",
   "front_connect": "connect",
-  "full_message_list": "full message list",
+  "message_list": "message list",
   "new_message": "new message",
   "back_disconnect": "disconnect",
   "front_disconnect": "disconnection",
