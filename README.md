@@ -61,7 +61,7 @@ You can find the back-end side Github repository at [here](https://github.com/dl
 
 ## Version History
 ### 0.1.0
-  🔲 Add SQLite database to store messages
+  ✅ Add SQLite database to store messages
   <br>
   ✅ Add settings(nickname, delete account, change password)
   <br>
