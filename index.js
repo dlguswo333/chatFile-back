@@ -9,12 +9,10 @@ const http = require('http').createServer(app);
 const cors = require('cors');
 const fs = require('fs');
 const data = require('./data.json');
-const crypto = require('crypto');
 const sessionStore = require('session-file-store')(session);
+const { validateIdLen, validatePwLen, getSalt, getHashValue } = require('./helper');
 
-const getSalt = () => {
-  return crypto.randomBytes(10).toString('hex');
-};
+
 
 // Create folder for files and databases if not exist.
 if (!fs.existsSync(upload_path)) {
@@ -40,7 +38,7 @@ app.use(upload({
 
 var sessionWare = session({
   // NOTE: change this secret value!!!
-  secret: '2j23jjf&#@dlfdkkc*%',
+  secret: '@#23$42dkfmc!f',
   resave: false,
   saveUninitialized: true,
   cookie: {
@@ -118,7 +116,7 @@ const handleMessage = (message, type, id) => {
   message['id'] = id;
   message['type'] = type;
   message['date'] = Date.now();
-  message['key'] = crypto.createHash('sha256').update(message.userName + getSalt() + message.date).digest('hex');
+  message['key'] = getHashValue(message.userName + getSalt() + message.date);
 }
 
 /*
@@ -186,15 +184,15 @@ app.post(`/signIn`, (req, res) => {
     }
     const id = idColonPw.split(':')[0];
     const pw = idColonPw.split(':')[1];
-    if (data.validate_id(id) == false || data.validate_pw(pw) == false) {
+    if (!(validateIdLen(id) && validatePwLen(pw))) {
       // id or pw does not satisfy the requirements.
       return res.sendStatus(401);
     }
     clientDb.signIn(id, pw).then((value) => {
-      console.log('sign in result:', value);
+      console.log(`${id} tried to sign in and the result is ${value}`);
       if (value === true) {
         // sign in succeeded.
-        req.session.key = crypto.createHash('sha256').update(req.sessionID + getSalt()).digest('hex');
+        req.session.key = getHashValue(req.sessionID + getSalt());
         req.session.clientId = id;
         res.cookie('signedIn', true, {
           httpOnly: false,
@@ -229,11 +227,11 @@ app.post(`/signUp`, (req, res) => {
     const id = idColonPw.split(':')[0];
     const pw = idColonPw.split(':')[1];
 
-    if (!(data['min_id_len'] <= id.length || id.length <= data['max_id_len'])) {
+    if (validateIdLen(pw)) {
       // id does not satisfy the requirements.
       return res.status(401).send(`ID does not meet the requirements.`);
     }
-    if (!(data['min_pw_len'] <= pw.length || pw.length <= data['max_pw_len'])) {
+    if (validatePwLen(pw)) {
       // pw does not satisfy the requirements.
       return res.status(401).send(`ID does not meet the requirements.`);
     }
