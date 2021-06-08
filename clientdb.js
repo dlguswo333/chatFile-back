@@ -1,17 +1,18 @@
 const sqlite3 = require('sqlite3').verbose();
-const crypto = require('crypto');
-const path = './db/client.db';
+const dbPath = './db/client.db';
+const { getHashValue } = require('./helper');
+
 const hashPw = (pw, salt) => {
-  return crypto.createHash('sha256').update(pw + salt).digest('hex');
+  return getHashValue(pw + salt);
 }
 
-const db = new sqlite3.Database(path, (err) => {
+const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error(err.message);
     return;
   }
   db.serialize(() => {
-    // Create client DB if not exists.
+    // Create client table if not exists.
     db.run(`CREATE TABLE IF NOT EXISTS
       client(
         id TEXT PRIMARY KEY NOT NULL,
