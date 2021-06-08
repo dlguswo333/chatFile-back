@@ -84,9 +84,7 @@ io.use((socket, next) => {
 // new client connected.
 io.on(data.back_connect,
   /**
-   * 
    * @param {socketIo.Socket} socket 
-   * @returns 
    */
   (socket) => {
     const key = socket.request.session.key;
@@ -104,11 +102,6 @@ io.on(data.back_connect,
     io.emit(data.client_connect, { id, value: clientList.get(id) });
     socket.emit(data.full_client_list, Array.from(clientList));
 
-    // Get all messages from DB and send it to the client.
-    messageDb.getFullMessages().then((messages) => {
-      socket.emit(data.full_message_list, messages);
-    });
-
     // A client sent a new message.
     socket.on(data.new_message, (message) => {
       handleMessage(message, 'text', id);
@@ -117,7 +110,7 @@ io.on(data.back_connect,
     });
 
     // a client disconnected.
-    socket.on(data.back_disconnect, (socket) => {
+    socket.on(data.back_disconnect, () => {
       console.log(`${id} disconnected`);
       // The client could have deleted his/her own account. Check it.
       if (clientList.has(id)) {
@@ -125,6 +118,12 @@ io.on(data.back_connect,
         io.emit(data.client_disconnect, { id, value: clientList.get(id) });
       }
     });
+
+    socket.on(data.message_list, (date) => {
+      messageDb.getMessageBelowDate(date).then((messages) => {
+        socket.emit(data.message_list, messages);
+      });
+    })
   });
 
 const handleMessage = (message, type, id) => {
@@ -396,7 +395,7 @@ app.get(`/files/:key`, (req, res) => {
     res.download(filePath, fileName, (err) => {
       if (err) {
         console.error(`${filePath} ${fileName}\n${err.message}`);
-        return res.sendStatus(500);
+        return res.status(500).send('File does not exist');
       }
       return;
     });

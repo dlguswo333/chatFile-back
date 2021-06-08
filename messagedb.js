@@ -28,6 +28,12 @@ const db = new sqlite3.Database(dbPath, (err) => {
       console.error(err.message);
       return;
     }
+    db.run(`CREATE INDEX IF NOT EXISTS date_index ON message(date)`, (err) => {
+      if (err) {
+        console.error(err.message);
+        return;
+      }
+    })
     console.log('connection to message DB established');
   });
 })
@@ -72,18 +78,29 @@ const insertMessage = (message) => {
 }
 
 /**
- * 
+ * @param {number} date
  * @returns {Promise<Message[]>}
  */
-const getFullMessages = () => {
+const getMessageBelowDate = (date) => {
   return new Promise((resolve, reject) => {
-    db.all(`SELECT * FROM message`, (err, rows) => {
-      if (err) {
-        console.error(`selecting all messages from DB failed: ${err.message}`);
-        reject(undefined);
-      }
-      resolve(rows);
-    })
+    if (date < 0) {
+      db.all(`SELECT * FROM message`, (err, rows) => {
+        if (err) {
+          console.error(`selecting all messages from DB failed: ${err.message}`);
+          reject(undefined);
+        }
+        resolve(rows);
+      });
+    }
+    else {
+      db.all(`SELECT * FROM message WHERE date < ?`, [date], (err, rows) => {
+        if (err) {
+          console.error(`selecting all messages from DB failed: ${err.message}`);
+          reject(undefined);
+        }
+        resolve(rows);
+      });
+    }
   });
 }
 
@@ -106,5 +123,4 @@ const getMessageByKey = (key) => {
 }
 
 
-
-module.exports = { insertMessage, getFullMessages, getMessageByKey };
+module.exports = { insertMessage, getMessageBelowDate, getMessageByKey };
