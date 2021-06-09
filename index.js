@@ -2,6 +2,8 @@ const app = require('express')();
 const upload = require('express-fileupload');
 const session = require('express-session');
 const clientDb = require('./clientdb');
+const messageDb = require('./messagedb');
+const socketIo = require('socket.io');
 const path = require('path');
 const upload_path = './files/';
 const db_path = './db';
@@ -9,13 +11,9 @@ const http = require('http').createServer(app);
 const cors = require('cors');
 const fs = require('fs');
 const data = require('./data.json');
-const crypto = require('crypto');
 const sessionStore = require('session-file-store')(session);
-const { validateIdLen, validatePwLen } = require('./helper');
+const { validateIdLen, validatePwLen, getSalt, getHashValue } = require('./helper');
 
-const getSalt = () => {
-  return crypto.randomBytes(10).toString('hex');
-};
 
 // Create folder for files and databases if not exist.
 if (!fs.existsSync(upload_path)) {
@@ -41,7 +39,7 @@ app.use(upload({
 
 var sessionWare = session({
   // NOTE: change this secret value!!!
-  secret: '2j23jjf&#@dlfdkkc*%',
+  secret: '@#23$42dkfmc!f',
   resave: false,
   saveUninitialized: true,
   cookie: {
@@ -58,7 +56,6 @@ var sessionWare = session({
 // link session with socket io.
 app.use(sessionWare);
 
-var messageList = [];
 var clientList = new Map();
 
 /*
@@ -66,7 +63,11 @@ var clientList = new Map();
 socket io part start
 
 */
-var io = require('socket.io')(http, {
+
+/**
+ * @type {socketIo.Server} io
+ */
+var io = socketIo(http, {
   cors: {
     origin: `http://localhost:${data.front_port}`,
     methods: ['GET', 'POST'],
@@ -80,46 +81,55 @@ io.use((socket, next) => {
 });
 
 // new client connected.
-io.on(data.back_connect, (socket) => {
-  const key = socket.request.session.key;
-  if (key === undefined) {
-    // block the client.
-    socket.disconnect();
-    return;
-  }
-  const id = socket.request.session.clientId;
-  console.log(`${id} connected.`);
-  // Add user to the map.
-  // If we do not delete the key from map,
-  // it will be much easier when the app has rooms.
-  clientList.set(id, 1 + (clientList.has(id) ? clientList.get(id) : 0));
-  io.emit(data.client_connect, { id, value: clientList.get(id) });
-  socket.emit(data.full_client_list, Array.from(clientList));
-  socket.emit(data.full_message_list, messageList);
-
-  // A client sent a new message.
-  socket.on(data.new_message, (message) => {
-    handleMessage(message, 'text', id);
-    messageList.push(message);
-    io.emit(data.new_message, message);
-  });
-
-  // a client disconnected.
-  socket.on(data.back_disconnect, (socket) => {
-    console.log(`${id} disconnected`);
-    // The client could have deleted his/her own account. Check it.
-    if (clientList.has(id)) {
-      clientList.set(id, clientList.get(id) - 1);
-      io.emit(data.client_disconnect, { id, value: clientList.get(id) });
+io.on(data.back_connect,
+  /**
+   * @param {socketIo.Socket} socket 
+   */
+  (socket) => {
+    const key = socket.request.session.key;
+    if (key === undefined) {
+      // block the client.
+      socket.disconnect();
+      return;
     }
+    const id = socket.request.session.clientId;
+    console.log(`${id} connected.`);
+    // Add user to the map.
+    // If we do not delete the key from map,
+    // it will be much easier when the app has rooms.
+    clientList.set(id, 1 + (clientList.has(id) ? clientList.get(id) : 0));
+    io.emit(data.client_connect, { id, value: clientList.get(id) });
+    socket.emit(data.full_client_list, Array.from(clientList));
+
+    // A client sent a new message.
+    socket.on(data.new_message, (message) => {
+      handleMessage(message, 'text', id);
+      messageDb.insertMessage(message);
+      io.emit(data.new_message, message);
+    });
+
+    // a client disconnected.
+    socket.on(data.back_disconnect, () => {
+      console.log(`${id} disconnected`);
+      // The client could have deleted his/her own account. Check it.
+      if (clientList.has(id)) {
+        clientList.set(id, clientList.get(id) - 1);
+        io.emit(data.client_disconnect, { id, value: clientList.get(id) });
+      }
+    });
+
+    socket.on(data.message_list, (date) => {
+      messageDb.getMessageBelowDate(date).then((messages) => {
+        socket.emit(data.message_list, messages);
+      });
+    })
   });
-});
 
 const handleMessage = (message, type, id) => {
   message['id'] = id;
   message['type'] = type;
   message['date'] = Date.now();
-  message['key'] = crypto.createHash('sha256').update(message.userName + getSalt() + message.date).digest('hex');
+  message['key'] = getHashValue(message.userName + getSalt() + message.date);
 }
 
 /*
@@ -164,7 +174,7 @@ app.post('/files', (req, res) => {
     // Successful file upload.
     // Now emit the file as a chat message.
     console.log('file uploaded');
-    messageList.push(message);
+    messageDb.insertMessage(message);
     io.emit(data.new_message, message);
     return res.sendStatus(200);
   });
@@ -192,10 +202,10 @@ app.post(`/signIn`, (req, res) => {
       return res.sendStatus(401);
     }
     clientDb.signIn(id, pw).then((value) => {
-      console.log('sign in result:', value);
+      console.log(`${id} tried to sign in and the result is ${value}`);
       if (value === true) {
         // sign in succeeded.
-        req.session.key = crypto.createHash('sha256').update(req.sessionID + getSalt()).digest('hex');
+        req.session.key = getHashValue(req.sessionID + getSalt());
         req.session.clientId = id;
         res.cookie('signedIn', true, {
           httpOnly: false,
@@ -230,11 +240,11 @@ app.post(`/signUp`, (req, res) => {
     const id = idColonPw.split(':')[0];
     const pw = idColonPw.split(':')[1];
 
-    if (validateIdLen(pw)) {
+    if (!validateIdLen(pw)) {
       // id does not satisfy the requirements.
       return res.status(401).send(`ID does not meet the requirements.`);
     }
-    if (validatePwLen(pw)) {
+    if (!validatePwLen(pw)) {
       // pw does not satisfy the requirements.
       return res.status(401).send(`ID does not meet the requirements.`);
     }
@@ -373,23 +383,22 @@ app.get(`/files/:key`, (req, res) => {
     return res.sendStatus(403);
   }
   console.log('file download request');
-  for (message of messageList) {
-    if (req.params.key === message.key) {
-      var filePath = upload_path + req.params.key + path.extname(message['fileName']);
-      var fileName = message['fileName'];
-      res.download(filePath, fileName, (err) => {
-        if (err) {
-          console.log(filePath, fileName);
-          console.log('error while handling file download');
-          return res.sendStatus(500);
-        }
-      });
-      return;
+  messageDb.getMessageByKey(req.params.key).then((message) => {
+    if (!message) {
+      // Could not find the file with the key.
+      console.log('could not find the file');
+      return res.sendStatus(404);
     }
-  }
-  // Could not find the file with the key.
-  console.log('could not find the file');
-  return res.sendStatus(404);
+    var filePath = upload_path + req.params.key + path.extname(message['fileName']);
+    var fileName = message['fileName'];
+    res.download(filePath, fileName, (err) => {
+      if (err) {
+        console.error(`${filePath} ${fileName}\n${err.message}`);
+        return res.status(500).send('File does not exist');
+      }
+      return;
+    });
+  })
 });
 
 // Start the server. listen to the port.
