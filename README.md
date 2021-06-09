@@ -22,7 +22,7 @@
 
 The repository you are seeing is the back-end side repository.  
 
-You can find the back-end side Github repository at [here](https://github.com/dlguswo333/chatFile-front).  
+You can find the front-end side Github repository at [here](https://github.com/dlguswo333/chatFile-front).  
 
 # How to Install chatFile
   1. Download the front-end and back-end repositories.
@@ -187,12 +187,13 @@ the server machine.
 This way the server will keep the session data across the server app restarts.
 <br>
 
-### Client DataBase
+### DataBase
 **chatFile** back-end uses ``SQLite3`` as a back-end database.<br>
 Thanks to ``node-sqlite3`` which is a interface tool between node.js and SQLite3,<br>
 it was easy to link between them.
 <br>
 
+#### Client DataBase
 **NOTE** that currently, **chatFile** does not protect database with authorization nor encrypt client's id. Only passwords are protected via ``sha256``.
 <br>
 
@@ -212,3 +213,18 @@ because ``PRIMARY KEY`` means every row must have unique key and thus cannot hav
 however ``SQLlite3`` had some bugs where ``PRIMARY KEY`` columns could have NULL value,<br>
 so to keep compatibility with earlier versions, ``SQLite3`` still permits NULL ``PRIMARY KEY``.
 <br>
+
+#### Message DataBase
+since #1, **chatFile** supports message DB. This way **chatFile** can save users' messages.
+The following table is the schema of the database.
+<br>
+
+| Column | Type | Description | Attribute |
+| ---- | ---- | ---- | ---- |
+| id | TEXT | Client's id who sent the chat. | NOT NULL |
+| type | TEXT | The type of the chat. Either ``text`` or ``file``. | NOT NULL |
+| key | TEXT | The key of the chat. | PRIMARY KEY, NOT NULL |
+| date | INTEGER | The date of the chat (`Date.now()` of JS.) | NOT NULL |
+| value | TEXT | The content of the chat. `NULL` if type is ``file``. | - |
+| fileName | TEXT | The file name of the chat. `NULL` if type is ``text``. | - |
+| fileSize | INTEGER | chat client's id. `NULL` if type is ``text``. | - |
