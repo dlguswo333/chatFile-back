@@ -15,7 +15,6 @@ const sessionStore = require('session-file-store')(session);
 const { validateIdLen, validatePwLen, getSalt, getHashValue } = require('./helper');
 
 
-
 // Create folder for files and databases if not exist.
 if (!fs.existsSync(upload_path)) {
   fs.mkdirSync(upload_path, { recursive: true });
