@@ -108,7 +108,7 @@ app.post(`/signOut`, (req, res) => {
   });
 });
 ```
-Let's look at this example. The server's ``/signOut`` endpoint(path) answers to the POST request.<br>
+Let's look at the above example. The server's ``/signOut`` endpoint(path) answers to the POST request.<br>
 If a request comes in, the server will set ``signedIn`` cookie's lifetime to zero
 (which is going to be deleted instantly), and then destroys the client's session.
 <br>
@@ -160,12 +160,16 @@ clientDb.signIn(id, pw).then((value) => {
         res.sendStatus(200);
       }
 ```
-The above code snippet illustrates how sign in works in **chatFile**.<br>
-``clientDb`` is a module for dealing with client information databse.<br>
+The above code snippet illustrates how sign in works in **chatFile**.
+<br>
+
+In the code, ``clientDb`` is a module which deals with client information database.<br>
 If ``clientDb.signIn()`` returns true for the given id and pw,
-the session will have ``key`` and ``clientId``.<br>
+the session will be given with ``key`` and ``clientId``.
 That is how client authentication works in **chatFile**.
-If the request session does not have a valid key, the server will reject the request.
+<br>
+
+If a request session does not have a valid key, the server will reject the request.
 ```js
 app.post('/files', (req, res) => {
   const key = req.session.key;
@@ -178,12 +182,12 @@ app.post('/files', (req, res) => {
 Like this.
 <br>
 
-Since the session object is stored only in back-end side, client cannot see or
-modify the session, so the session-based client authentication is as safe as
-the server machine.
+Since the session object(``req.session`` object in the above code) is stored only in back-end side, client cannot see or
+modify the session, so we can say this session-based client authentication is just as safe as
+the server machine is.
 <br>
 
-**chatFile** also uses ``session-file-store`` module to store client sessions on disk drive.<br>
+**chatFile** also uses ``session-file-store`` module to store client sessions on server disk drives.<br>
 This way the server will keep the session data across the server app restarts.
 <br>
 
@@ -194,7 +198,7 @@ it was easy to link between them.
 <br>
 
 #### Client DataBase
-**NOTE** that currently, **chatFile** does not protect database with authorization nor encrypt client's id. Only passwords are protected via ``sha256``.
+**NOTE** that currently, **chatFile** does not protect database with authorization nor encrypt client's id. Only passwords are hashed via ``sha256``.
 <br>
 
 The following is the schema of client table.
@@ -208,14 +212,18 @@ The following is the schema of client table.
 | salt | TEXT | salt value used to hash client's password | - |
 <br>
 
-From the general view of RDBMS, having two attributes ``PRIMARY KEY`` and ``NOT NULL`` on the same column may not seem natural,<br>
-because ``PRIMARY KEY`` means every row must have unique key and thus cannot have NULL value,<br>
-however ``SQLlite3`` had some bugs where ``PRIMARY KEY`` columns could have NULL value,<br>
-so to keep compatibility with earlier versions, ``SQLite3`` still permits NULL ``PRIMARY KEY``.
+From the general view of RDBMS, having two attributes ``PRIMARY KEY`` and ``NOT NULL`` on the same column may not seem necessary,<br>
+because ``PRIMARY KEY`` means every row must have unique key and thus cannot have NULL value in the normal RDBMS world.
+<br>
+
+However, long times ago ``SQLlite3`` had a bug where ``PRIMARY KEY`` columns could have NULL value.
+So to keep compatibility with earlier versions, ``SQLite3`` still permits NULL value on ``PRIMARY KEY`` columns.
 <br>
 
 #### Message DataBase
-since #1, **chatFile** supports message DB. This way **chatFile** can save users' messages.
+since [#1](https://github.com/dlguswo333/chatFile-back/pull/1), **chatFile** storing client messages in DB. This way **chatFile** can save users' messages across the application restarts.
+<br>
+
 The following table is the schema of the database.
 <br>
 
@@ -226,5 +234,5 @@ The following table is the schema of the database.
 | key | TEXT | The key of the chat. | PRIMARY KEY, NOT NULL |
 | date | INTEGER | The date of the chat (`Date.now()` of JS.) | NOT NULL |
 | value | TEXT | The content of the chat. `NULL` if type is ``file``. | - |
-| fileName | TEXT | The file name of the chat. `NULL` if type is ``text``. | - |
-| fileSize | INTEGER | chat client's id. `NULL` if type is ``text``. | - |
+| fileName | TEXT | The name of the file attached to the . `NULL` if type is ``text``. | - |
+| fileSize | INTEGER | The file size in bytes attached to the chat. `NULL` if type is ``text``. | - |
