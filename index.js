@@ -13,6 +13,7 @@ const fs = require('fs');
 const data = require('./data.json');
 const sessionStore = require('session-file-store')(session);
 const { validateIdLen, validatePwLen, getSalt, getHashValue } = require('./helper');
+const process = require('process');
 
 
 // Create folder for files and databases if not exist.
@@ -404,4 +405,22 @@ app.get(`/files/:key`, (req, res) => {
 // Start the server. listen to the port.
 http.listen(data.back_port, () => {
   console.log(`listening on port num:${data.back_port}`);
+});
+
+['SIGINT', 'SIGTERM'].forEach((sig) => {
+  process.on(sig, () => {
+    clientDb.close().then(() => {
+      console.log('closed client DB');
+    }).catch((err) => {
+      console.log('error closing client DB: ' + err.message);
+    }).finally(() => {
+      messageDb.close().then(() => {
+        console.log('closed message DB');
+      }).catch((err) => {
+        console.log('error closing message DB: ', err.message);
+      }).finally(() => {
+        process.exit();
+      })
+    })
+  });
 });

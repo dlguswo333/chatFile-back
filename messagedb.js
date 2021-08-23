@@ -122,5 +122,21 @@ const getMessageByKey = (key) => {
   });
 }
 
+/**
+ * @returns {Promise.<void, Error>}
+ */
+const close = () => {
+  return new Promise((resolve, reject) => {
+    db.close((err) => {
+      if (err) {
+        console.error('error while closing the client db');
+        reject(err);
+        return;
+      }
+    })
+    resolve(true);
+  })
+};
 
-module.exports = { insertMessage, getMessageBelowDate, getMessageByKey };
+
+module.exports = { insertMessage, getMessageBelowDate, getMessageByKey, close };

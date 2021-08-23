@@ -211,14 +211,20 @@ const changePassword = (id, pw, newPw) => {
   });
 };
 
-close = () => {
-  db.close((err) => {
-    if (err) {
-      console.error('error while closing the client db');
-      return;
-    }
+/**
+ * @returns {Promise.<void, Error>}
+ */
+const close = () => {
+  return new Promise((resolve, reject) => {
+    db.close((err) => {
+      if (err) {
+        console.error('error while closing the client db');
+        reject(err);
+        return;
+      }
+    })
+    resolve(true);
   })
-  console.log('closed the client db');
 };
 
 module.exports = { signIn, signUp, query, close, deleteClient, getAllIds, changePassword };
