@@ -10,7 +10,7 @@ function validatePwLen(pw) {
 }
 
 const getSalt = () => {
-  return crypto.randomBytes(4).toString('hex');
+  return crypto.randomBytes(16).toString('hex');
 };
 
 /**
