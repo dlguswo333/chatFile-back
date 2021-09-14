@@ -25,7 +25,7 @@ if (!fs.existsSync(db_path)) {
 }
 
 app.use(cors({
-  origin: `http://localhost:${data.front_port}`,
+  origin: `${data.server_url}:${data.front_port}`,
   credentials: true
 }));
 
@@ -70,7 +70,7 @@ socket io part start
  */
 var io = socketIo(http, {
   cors: {
-    origin: `http://localhost:${data.front_port}`,
+    origin: `${data.server_url}:${data.front_port}`,
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -196,8 +196,7 @@ app.post(`/signIn`, (req, res) => {
       // oops, something is wrong...
       res.sendStatus(500);
     }
-    const id = idColonPw.split(':')[0];
-    const pw = idColonPw.split(':')[1];
+    const [id, pw] = idColonPw.split(':');
     if (!(validateIdLen(id) && validatePwLen(pw))) {
       // id or pw does not satisfy the requirements.
       return res.sendStatus(401);
